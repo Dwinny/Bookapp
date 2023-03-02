@@ -1,34 +1,81 @@
 import 'dart:developer';
 
-import 'package:bookapp/Services/Remoteservices.dart';
-import '../models/Booksapp.dart';
-import '../widgets/trendingbooks.dart';
-import 'package:bookapp/widgets/search_textfield.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/src/foundation/key.dart';
-import 'package:flutter/src/widgets/framework.dart';
-import '../widgets/Example.dart';
+import 'package:bookapp/controllers/book_list_controller.dart';
+import 'package:bookapp/models/book.dart';
+import 'package:bookapp/utilities/error.dart';
+import 'package:provider/provider.dart';
 
-class HomeScreen extends StatelessWidget {
+import '../widgets/trendingbooks.dart';
+import 'package:flutter/material.dart';
+
+class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    init();
+  }
+
+  void init() async {
+    try {
+      await getPopularBooks();
+    } on Failure catch (e) {
+      log(e.message);
+    }
+  }
+
+  Future<void> getPopularBooks() async {
+    final controller = context.read<BookListController>();
+
+    try {
+      await controller.getBooks();
+    } on Failure {
+      rethrow;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          //mainAxisSize: MainAxisSize.min,
-          children: [
-            Iconmenu(),
-            SizedBox(height: 20),
-            _PopularBooksSection(),
-            SizedBox(
-              height: 20,
-            ),
-            _TrendingBooksSection(),
-          ],
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        leading: IconButton(
+          onPressed: () {},
+          icon: const Icon(
+            Icons.menu,
+            color: Colors.black,
+          ),
+        ),
+        title: const Text(
+          'EXPLORE',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: const [
+          CircleAvatar(
+            backgroundColor: Colors.black,
+          ),
+        ],
+      ),
+      body: SafeArea(
+        bottom: false,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              _PopularBooksSection(),
+              _TrendingBooksSection(),
+            ],
+          ),
         ),
       ),
     );
@@ -42,7 +89,7 @@ class Iconmenu extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
+      children: const [
         CircleAvatar(
           backgroundColor: Colors.grey,
           child: Icon(
@@ -53,7 +100,10 @@ class Iconmenu extends StatelessWidget {
         Text(
           'EXPLORE',
           style: TextStyle(
-              color: Colors.black, fontSize: 15, fontWeight: FontWeight.bold),
+            color: Colors.black,
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         CircleAvatar(
           backgroundColor: Colors.black,
@@ -63,165 +113,160 @@ class Iconmenu extends StatelessWidget {
   }
 }
 
-class _PopularBooksSection extends StatefulWidget {
-  _PopularBooksSection({Key? key}) : super(key: key);
-
-  @override
-  State<_PopularBooksSection> createState() => _PopularBooksSectionState();
-}
-
-class _PopularBooksSectionState extends State<_PopularBooksSection> {
-  List<Book>? Bookstore = [];
-  var isLoaded = false;
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    getData();
-  }
-
-  getData() async {
-    Bookstore = (await RemoteService().getBooks()) as List<Book>?;
-    if (Bookstore != null) {
-      setState(() {
-        isLoaded = true;
-      });
-    }
-  }
+class _PopularBooksSection extends StatelessWidget {
+  const _PopularBooksSection({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Column(mainAxisSize: MainAxisSize.min, children: [
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Popular',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            'Show All',
-            style: TextStyle(fontSize: 20, color: Colors.green),
-          ),
-        ],
-      ),
-      SizedBox(
-        height: 10,
-      ),
-      Visibility(
-          visible: isLoaded,
-          // ignore: sort_child_properties_last
-          child: SizedBox(
-            height: 245,
-            child: ListView.builder(
-              itemCount: Bookstore?.length,
-              scrollDirection: Axis.horizontal,
-              shrinkWrap: true,
-              //physics: const BouncingScrollPhysics(),
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Container(
-                            height: 220,
-                            width: 150,
-                            margin: EdgeInsets.only(right: 10),
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8.0)),
-                            child: (Bookstore![index].bookImage)),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Text(
-                            Bookstore![index].title,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(width: 20),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 60.0),
-                            child: Icon(Icons.bookmark_border_outlined),
-                          )
-                        ],
-                      ),
-                      Text(
-                        Bookstore![index].author,
-                        style: TextStyle(
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
+    return Consumer<BookListController>(
+      builder: (context, controller, _) {
+        final books = controller.books;
+
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: const [
+                  Text(
+                    'Popular',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                );
-              },
+                  Text(
+                    'Show All',
+                    style: TextStyle(fontSize: 20, color: Colors.green),
+                  ),
+                ],
+              ),
             ),
-          ),
-          replacement: Center(
-            child: CircularProgressIndicator(),
-          )),
-    ]);
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 380,
+              child: ListView.separated(
+                itemCount: books.length,
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                itemBuilder: (context, index) {
+                  final book = books[index];
+                  return BookItem(book);
+                },
+                separatorBuilder: (context, index) {
+                  return const SizedBox(width: 20);
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 
-class _TrendingBooksSection extends StatelessWidget {
-  _TrendingBooksSection({Key? key}) : super(key: key);
-  List<Trendingbooks> trending = [
-    Trendingbooks(Colors.blue, 'books 1'),
-    Trendingbooks(Colors.grey, 'books 2'),
-    Trendingbooks(Colors.orange, 'books 3'),
-    Trendingbooks(Colors.purple, 'books 4'),
-    Trendingbooks(Colors.green, 'books 5'),
-    Trendingbooks(Colors.yellow, 'books 6'),
-    Trendingbooks(Colors.red, 'books 7'),
-  ];
+class BookItem extends StatelessWidget {
+  const BookItem(this.bookDto, {super.key});
+
+  final BookDto bookDto;
 
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Trending Books',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              'Show All',
-              style: TextStyle(fontSize: 20, color: Colors.green),
-            ),
-          ],
+        Image.network(
+          bookDto.bookImage,
+          height: 320,
+          width: 200,
+          fit: BoxFit.contain,
+          alignment: Alignment.centerLeft,
         ),
+        const SizedBox(height: 10),
         SizedBox(
-          height: 300,
-          width: MediaQuery.of(context).size.width,
-          child: Expanded(
-            child: ListView.builder(
-              itemCount: trending.length,
-              shrinkWrap: true,
-              //physics: const BouncingScrollPhysics(),
-              itemBuilder: (context, index) {
-                return Trendingbooks(
-                    trending[index].color, trending[index].name);
-              },
-            ),
+          width: 200,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Expanded(
+                child: Text(
+                  bookDto.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              const Padding(
+                padding: EdgeInsets.only(left: 60.0),
+                child: Icon(Icons.bookmark_border_outlined),
+              )
+            ],
+          ),
+        ),
+        Text(
+          bookDto.author,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 10,
           ),
         ),
       ],
+    );
+  }
+}
+
+class _TrendingBooksSection extends StatelessWidget {
+  const _TrendingBooksSection({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    List<Trendingbooks> trending = [
+      Trendingbooks(Colors.blue, 'books 1'),
+      Trendingbooks(Colors.grey, 'books 2'),
+      Trendingbooks(Colors.orange, 'books 3'),
+      Trendingbooks(Colors.purple, 'books 4'),
+      Trendingbooks(Colors.green, 'books 5'),
+      Trendingbooks(Colors.yellow, 'books 6'),
+      Trendingbooks(Colors.red, 'books 7'),
+    ];
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              Text(
+                'Trending Books',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                'Show All',
+                style: TextStyle(fontSize: 20, color: Colors.green),
+              ),
+            ],
+          ),
+          ListView.builder(
+            itemCount: trending.length,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
+            itemBuilder: (context, index) {
+              return Trendingbooks(trending[index].color, trending[index].name);
+            },
+          ),
+        ],
+      ),
     );
   }
 }

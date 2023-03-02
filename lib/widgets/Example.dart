@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:bookapp/models/Booksapp.dart';
+import 'package:bookapp/models/book.dart';
 
 /*class Trendingbooks extends StatelessWidget {
   final String imageLink;
